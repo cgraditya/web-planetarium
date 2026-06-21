@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmos 3D - Simulasi Sistem Tata Surya Interaktif</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js and OrbitControls via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <!-- Intro Overlay for Audio Permission & Cinematic Entrance -->
+    <div id="intro-overlay" class="overlay">
+        <div class="intro-content">
+            <div class="logo-container">
+                <i class="fa-solid fa-shuttle-space orbital-glow"></i>
+                <h1>COSMOS 3D</h1>
+                <p class="subtitle">Simulasi Sistem Tata Surya Realistis & Interaktif</p>
+            </div>
+            <div class="intro-card">
+                <p>Jelajahi keindahan sistem tata surya kita dalam bentuk 3D. Gerakkan kursor untuk memutar sudut pandang, gunakan scroll untuk memperbesar/memperkecil, dan klik planet untuk membaca informasi detailnya.</p>
+                <button id="btn-start" class="btn btn-primary btn-lg">
+                    <i class="fa-solid fa-play"></i> Mulai Penjelajahan
+                </button>
+            </div>
+            <div class="intro-footer">
+                <p>&copy; 2026 Cosmos 3D. Didukung oleh Three.js & Web Audio Synthesizer.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Canvas for 3D Render -->
+    <div id="canvas-container"></div>
+
+    <!-- HUD Overlay (Heads-Up Display) -->
+    <div class="hud-layer pointer-events-none">
+        <!-- Top HUD Header -->
+        <header class="hud-header pointer-events-auto">
+            <div class="brand">
+                <i class="fa-solid fa-circle-notch fa-spin text-glow"></i>
+                <div class="brand-text">
+                    <h2>COSMOS 3D</h2>
+                    <span>SISTEM MONITORING TATA SURYA</span>
+                </div>
+            </div>
+            <div class="status-panel">
+                <div class="hud-metric">
+                    <span class="label">SIMULASI</span>
+                    <span class="value text-success" id="sim-status">AKTIF</span>
+                </div>
+                <div class="hud-metric">
+                    <span class="label">TARGET</span>
+                    <span class="value" id="hud-target">MATAHARI (BEBAS)</span>
+                </div>
+                <div class="hud-metric hidden-mobile">
+                    <span class="label">SKALA</span>
+                    <span class="value text-info" id="hud-scale">VISUAL</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Left Sidebar: Planet Navigator -->
+        <aside class="sidebar-left pointer-events-auto">
+            <div class="sidebar-header">
+                <h3>NAVIGASI PLANET</h3>
+                <div class="header-line"></div>
+            </div>
+            <div class="planet-menu" id="planet-navigator">
+                <button class="nav-item active" data-planet="sun">
+                    <span class="color-dot sun-dot"></span> Matahari
+                </button>
+                <button class="nav-item" data-planet="mercury">
+                    <span class="color-dot mercury-dot"></span> Merkurius
+                </button>
+                <button class="nav-item" data-planet="venus">
+                    <span class="color-dot venus-dot"></span> Venus
+                </button>
+                <button class="nav-item" data-planet="earth">
+                    <span class="color-dot earth-dot"></span> Bumi
+                </button>
+                <button class="nav-item" data-planet="mars">
+                    <span class="color-dot mars-dot"></span> Mars
+                </button>
+                <button class="nav-item" data-planet="jupiter">
+                    <span class="color-dot jupiter-dot"></span> Yupiter
+                </button>
+                <button class="nav-item" data-planet="saturn">
+                    <span class="color-dot saturn-dot"></span> Saturnus
+                </button>
+                <button class="nav-item" data-planet="uranus">
+                    <span class="color-dot uranus-dot"></span> Uranus
+                </button>
+                <button class="nav-item" data-planet="neptune">
+                    <span class="color-dot neptune-dot"></span> Neptunus
+                </button>
+                <button class="nav-item" data-planet="pluto">
+                    <span class="color-dot pluto-dot"></span> Pluto
+                </button>
+            </div>
+        </aside>
+
+        <!-- Right Sidebar: Planet Information Card -->
+        <aside class="sidebar-right pointer-events-auto" id="info-panel">
+            <div class="info-container">
+                <!-- Panel Header with close button -->
+                <div class="info-header">
+                    <div class="title-area">
+                        <span class="subtitle-tag" id="planet-type">Bintang Kelas G2V</span>
+                        <h1 id="planet-name">Matahari</h1>
+                    </div>
+                    <button class="btn-close" id="btn-close-info" title="Kembali ke Pandangan Bebas">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                
+                <div class="info-body scrollbar-custom">
+                    <!-- Planet Canvas / Image Generator placeholder inside UI -->
+                    <div class="planet-preview-container">
+                        <div id="planet-preview-glow" class="preview-glow"></div>
+                        <canvas id="planet-preview-canvas" width="150" height="150"></canvas>
+                    </div>
+
+                    <!-- Description -->
+                    <p class="description" id="planet-description">
+                        Matahari adalah bintang di pusat Tata Surya. Ia merupakan bola plasma panas yang hampir bulat sempurna, dengan gerakan konveksi internal yang menghasilkan medan magnet melalui proses dinamo.
+                    </p>
+
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Diameter</span>
+                            <span class="stat-val" id="stat-diameter">1.392.700 km</span>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="progress-diameter" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label"><i class="fa-solid fa-weight-hanging"></i> Massa Relatif</span>
+                            <span class="stat-val" id="stat-mass">333.000 Bumi</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label"><i class="fa-solid fa-arrows-to-dot"></i> Jarak ke Matahari</span>
+                            <span class="stat-val" id="stat-distance">Pusat</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label"><i class="fa-solid fa-temperature-half"></i> Suhu Permukaan</span>
+                            <span class="stat-val" id="stat-temp">~5.500 °C</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label"><i class="fa-solid fa-rotate"></i> Waktu Rotasi</span>
+                            <span class="stat-val" id="stat-rotation">25 Hari Bumi</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label"><i class="fa-solid fa-circle-notch"></i> Periode Revolusi</span>
+                            <span class="stat-val" id="stat-orbit">-</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label"><i class="fa-solid fa-moon"></i> Jumlah Satelit</span>
+                            <span class="stat-val" id="stat-moons">0 Moons</span>
+                        </div>
+                    </div>
+
+                    <!-- Fun Fact section -->
+                    <div class="fact-section">
+                        <h4><i class="fa-regular fa-lightbulb text-warning"></i> FAKTA MENARIK</h4>
+                        <p id="planet-fact">
+                            Matahari mencakup sekitar 99,86% dari total massa seluruh Sistem Tata Surya. Cahaya Matahari membutuhkan waktu sekitar 8 menit dan 20 detik untuk mencapai Bumi.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="info-footer-btn">
+                    <button class="btn btn-secondary btn-block" id="btn-focus-planet">
+                        <i class="fa-solid fa-crosshairs"></i> Fokus Kamera
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Bottom Panel: Controls Deck -->
+        <footer class="controls-deck pointer-events-auto">
+            <div class="deck-section align-left">
+                <!-- Music Control -->
+                <button id="btn-music" class="btn btn-icon" title="Musik Ambience (Mute/Unmute)">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <div class="volume-status hidden-mobile">AMBIENT AUDIO</div>
+            </div>
+
+            <div class="deck-section align-center">
+                <!-- Playback controls -->
+                <button id="btn-play" class="btn btn-icon" title="Jeda/Lanjutkan Orbit">
+                    <i class="fa-solid fa-pause"></i>
+                </button>
+                <div class="slider-group">
+                    <span class="slider-label hidden-mobile">Kecepatan Orbit:</span>
+                    <input type="range" id="slider-speed" min="0" max="10" step="0.2" value="1.0" title="Kecepatan Orbit">
+                    <span id="speed-val" class="speed-indicator">1.0x</span>
+                </div>
+            </div>
+
+            <div class="deck-section align-right">
+                <!-- Visualization Toggles -->
+                <button id="btn-toggle-orbits" class="btn btn-outline active" title="Tampilkan/Sembunyikan Garis Orbit">
+                    <i class="fa-solid fa-circle-nodes"></i> <span class="btn-text">Garis Orbit</span>
+                </button>
+                <button id="btn-toggle-scale" class="btn btn-outline" title="Ubah Skala (Visual/Realistis)">
+                    <i class="fa-solid fa-ruler-combined"></i> <span class="btn-text" id="toggle-scale-text">Skala Real</span>
+                </button>
+                <button id="btn-reset-cam" class="btn btn-outline" title="Kembalikan Sudut Pandang">
+                    <i class="fa-solid fa-rotate-left"></i> <span class="btn-text">Reset Kamera</span>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Instruction Hint -->
+    <div class="control-hint pointer-events-none">
+        <p><i class="fa-solid fa-computer-mouse"></i> Drag: Putar | Scroll: Zoom | Right-click: Geser | Klik Planet untuk detail</p>
+    </div>
+
+    <!-- Main JavaScript App -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "web-planetarium",
+  "version": "1.0.0",
+  "description": "Simulasi Tata Surya 3D Interaktif menggunakan Three.js dan Web Audio Synthesizer",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "threejs",
+    "solarsystem",
+    "planetarium",
+    "simulation",
+    "3d"
+  ],
+  "author": "Antigravity AI",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^4.4.5"
+  }
+}
